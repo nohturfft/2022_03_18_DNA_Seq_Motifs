@@ -97,22 +97,26 @@ rm(the.url)
 
 ## Open data file  / read track data  
 ```{r}
-df <- readr::read_tsv(file=track.file,
-                      col_names=FALSE,
-                      col_types = list(col_character(), col_integer(), col_integer(),
-                                       col_character(), col_integer(), col_integer(),
-                                       col_character(), col_character()),
-                      n_max=4380460, progress = FALSE)
-df <- as.data.frame(df)
+if (!exists("dafra")) {
+  dafra <- readr::read_tsv(file=track.file,
+                        col_names=FALSE,
+                        col_types = list(col_character(), col_integer(), col_integer(),
+                                         col_character(), col_integer(), col_integer(),
+                                         col_character(), col_character()),
+                        n_max=4380460, progress = FALSE) %>% 
+    as.data.frame
+}
+# df <- as.data.frame(df)
+class(dafra)
 cat("Size of data frame:\n")
-pryr::object_size(df)
+format(object.size(dafra), units="Mb")
 ```
 
 ## Add column headers to chip-seq data frame:  
 Based on [track information](http://genome.ucsc.edu/cgi-bin/hgTrackUi?db=hg19&g=wgEncodeRegTfbsClusteredV3) from ENCODE we now assign descriptive column headers to the data frame ...  
 ```{r results="asis"}
-names(df) <- c("chrom", "chromStart", "chromEnd", "name", "score", "expCount", "expNums", "expScores")
-head(df) %>% knitr::kable(., align=rep("c", ncol(df)))
+names(dafra) <- c("chrom", "chromStart", "chromEnd", "name", "score", "expCount", "expNums", "expScores")
+head(dafra) %>% knitr::kable(., align=rep("c", ncol(dafra)))
 ```
 
 # Extract relevant peaks  
@@ -120,8 +124,8 @@ head(df) %>% knitr::kable(., align=rep("c", ncol(df)))
 Then print the number of IRF1 peaks.  
 ```{r}
 tf <- "IRF1"
-stopifnot(tf %in% df$name)
-df.tf <- subset(df, name=="IRF1")
+stopifnot(tf %in% dafra$name)
+df.tf <- subset(dafra, name=="IRF1")
 nrow(df.tf) %>% format(big.mark=",") %>% cat
 ```
 
@@ -145,10 +149,15 @@ start <- df.tf2$chromStart
 end <- df.tf2$chromEnd
 seq.ds <- Biostrings::getSeq(Hsapiens, names=chr, start=start, end=end)
 rm(chr, start, end)
+```
+
+Inspecting the new data object:
+```{r}
 class(seq.ds)
 ```
 
-Let's have a look at this data object:  
+
+Let's have a look at this "DNAStringSet" object:  
 ```{r}
 seq.ds
 ```
@@ -160,23 +169,26 @@ Motif search - key input for the `GADEM()` function:
 1. Sequences in "DNAStringSet" format  
 2. A BSgenome object (here for Hsapiens)  
 
-```{r }
-# gadem.results <- GADEM(seq.ds, verbose=TRUE, genome=Hsapiens)
-# class(gadem.results) # "gadem" (rGADEM)
-```
-
-## Save results  
-Depending on the number of sequences, it can take very long to perform the above motif search. In such cases it can be useful to save the result in a file. RDS files store data in a native R format (RDS = "R data structure").  
-```{r save rGADEM results}
-# file.name.1 <- paste0(this.script, ".RDS")
-# saveRDS(object=gadem.results, file=file.name.1, compress="bzip2")
-# system(paste("du -h", file.name.1), intern=TRUE) %>% cat
-```
-
-One would load an RDS file as shown below:  
 ```{r}
-gadem.results <- readRDS(file="BDiB_2021_Seq_Motifs_Search_IRF1.Rmd.RDS")
+# Depending on the number of sequences, it can take very long to perform this
+# motif search. In such cases it can be useful to save the result in a file.
+# RDS files store data in a native R format (RDS = "R data structure").  
+if (!exists("gadem.results")) {
+  if (!file.exists("gadem_results.RDS")) {
+    gadem.results <- GADEM(seq.ds, verbose=TRUE, genome=Hsapiens)
+  } else {
+    gadem.results <- readRDS(file="gadem_results.RDS")
+    saveRDS(object=gadem.results, file="gadem_results.RDS", compress="bzip2")
+  }
+}
 ```
+
+
+Class of new data object produced by rGADEM:
+```{r}
+class(gadem.results) # "gadem" (rGADEM)
+```
+
 
 
 ## Extract position weight matrices from GADEM results:  
@@ -276,14 +288,11 @@ seqLogo::seqLogo(reverseComplement(pwm.list[[2]]))
 
 
 ### Compare rGADEM motif to JASPAR database of known motifs:  
-First, trim motif edges (requires MotIV package):  
-```{r}
-pwm.list
+First, trim motif edges:  
+```{r message=FALSE, warning=FALSE}
+# pwm.list
 gadem.pwm.trim <- lapply(pwm.list, trim_motifs)
-sapply(gadem.pwm.trim, class)
-gadem.pwm.trim[[1]]
-seqLogo::seqLogo(gadem.pwm.trim[[1]])
-seqLogo::seqLogo(gadem.pwm.trim[[2]])
+view_motifs(gadem.pwm.trim)
 ```
 
 Now look for matches in the JASPAR database:  
