@@ -173,13 +173,13 @@ Motif search - key input for the `GADEM()` function:
 # Depending on the number of sequences, it can take very long to perform this
 # motif search. In such cases it can be useful to save the result in a file.
 # RDS files store data in a native R format (RDS = "R data structure").  
-if (!exists("gadem.results")) {
-  if (!file.exists("gadem_results.RDS")) {
+if (!file.exists("gadem_results.RDS")) {
+  if (!exists("gadem.results")) {
     gadem.results <- GADEM(seq.ds, verbose=TRUE, genome=Hsapiens)
-  } else {
-    gadem.results <- readRDS(file="gadem_results.RDS")
     saveRDS(object=gadem.results, file="gadem_results.RDS", compress="bzip2")
   }
+} else {
+  gadem.results <- readRDS(file="gadem_results.RDS")
 }
 ```
 
@@ -295,42 +295,46 @@ gadem.pwm.trim <- lapply(pwm.list, trim_motifs)
 view_motifs(gadem.pwm.trim)
 ```
 
-Now look for matches in the JASPAR database:  
-```{r}
-gadem.pwm.trim
-class(gadem.pwm.trim)
+## Structure of IRF1 bound to DNA. 
+![](IRF1_PDB.png){height=400px}
+
+Reference: _Escalante CR, Yie J, Thanos D, Aggarwal AK. Structure of IRF-1 with bound DNA reveals determinants of interferon regulation. Nature. 1998 Jan 1;391(6662):103-6. doi: 10.1038/34224. PMID: [9422515](https://pubmed.ncbi.nlm.nih.gov/9422515/)._
+
+
+::: {.exercise}
+![](ex.png){height=30px}
+**EXERCISE**
+
+(1) Save another copy of this script
+(2) Repeat the analysis for another transcription factor included with the ENCODE dataset.
+:::
+
+## Session info  
+```{r SESSION-INFO-DATE, results="asis"}
+cat("Date:", format(Sys.time(), "%a %d-%b-%Y %H:%M:%S"), "<br>\n")
 ```
 
-```{r}
-gadem.1.analysis.jaspar <- MotIV::motifMatch(gadem.pwm.trim)
-# class(gadem.1.analysis.jaspar) # "motiv" (MotIV)
-summary(gadem.1.analysis.jaspar)
+```{r SESSION-INFO-PLATFORM}
+si <- sessioninfo::session_info()
+si.platform.df <- data.frame(
+  setting = names(si$platform),
+  value   = unlist(si$platform),
+  stringsAsFactors = FALSE,
+  row.names = NULL
+)
+DT::datatable(si.platform.df,
+              options = list(columnDefs = list(list(className = 'dt-left', targets = 0:1)),
+                             dom = 't'),
+              rownames = FALSE,
+              class="stripe")
 ```
 
-Set filters to extract motif hits from MotIV results (Unfortunately, the methods from the MotIV package are rather arcane!!):  
-```{r}
-f.df.tf <- MotIV::setFilter(tfname="IRF1")
-f.sp1 <- MotIV::setFilter(tfname="SP1")
-# Combine two filters:
-f.df.tf.sp1 <- f.df.tf | f.sp1
-# Apply filters:
-fil <- filter(gadem.1.analysis.jaspar, f.df.tf.sp1, exact=FALSE, verbose=FALSE)
-
-# Show plot comparing the discovered motifs to matches in the JASPAR database:
-plot(fil)
+```{r SESSION-INFO-PACKAGES}
+si$packages %>% 
+  as.data.frame() %>% 
+  dplyr::select(package, version=loadedversion, date, source) %>% 
+  DT::datatable(options = list(columnDefs = list(list(className = 'dt-left', targets = 0:3))),
+              rownames = FALSE,
+              class="stripe")
+  
 ```
-
-
-**CONCLUSION:** Motif 1 is a very good match to the established IRF1 site!
-
-Alignments (based on consensus sequences rather than PWMs):
-```{r}
-alignments <- viewAlignments(fil)
-print(alignments)
-```
-
-Finally, keep a record of the system settings and package versions:
-```{r}
-sessionInfo()
-```
-
