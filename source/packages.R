@@ -28,7 +28,7 @@ if (! "seqLogo" %in% row.names(installed.packages())) BiocManager::install("seqL
 if (! "rGADEM" %in% row.names(installed.packages())) BiocManager::install("rGADEM")
 if (! "ChIPpeakAnno" %in% row.names(installed.packages())) BiocManager::install("ChIPpeakAnno")
 if (! "BSgenome.Hsapiens.UCSC.hg19" %in% row.names(installed.packages())) BiocManager::install("BSgenome.Hsapiens.UCSC.hg19")
-if (! "JASPAR2014" %in% row.names(installed.packages())) BiocManager::install("JASPAR2014")
+if (! "JASPAR2020" %in% row.names(installed.packages())) BiocManager::install("JASPAR2020")
 if (! "universalmotif" %in% row.names(installed.packages())) BiocManager::install("universalmotif")
 
 
@@ -58,7 +58,7 @@ library(VennDiagram) # required for ChIPpeakAnno
 library(ChIPpeakAnno)
 
 library(BSgenome.Hsapiens.UCSC.hg19)
-library(JASPAR2014)
+library(JASPAR2020)
 library(universalmotif)
 
 
