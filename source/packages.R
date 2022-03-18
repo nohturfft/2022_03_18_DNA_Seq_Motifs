@@ -13,6 +13,7 @@ if (! "dplyr" %in% row.names(installed.packages())) install.packages("dplyr")
 if (! "rstudioapi" %in% row.names(installed.packages())) install.packages("rstudioapi")
 if (! "readr" %in% row.names(installed.packages())) install.packages("readr")
 if (! "sessioninfo" %in% row.names(installed.packages())) install.packages("sessioninfo")
+if (! "DT" %in% row.names(installed.packages())) install.packages("DT")
 
 
 if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")
